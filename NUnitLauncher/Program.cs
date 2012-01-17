@@ -2,6 +2,9 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
+using System.Xml;
+using System.Xml.Serialization;
+using System.Reflection;
 
 namespace NUnitLauncher
 {
@@ -14,6 +17,21 @@ namespace NUnitLauncher
 				Console.WriteLine("Please provide the directory to search for test assemblies.");
 				return -1;
 			}
+
+            NUnitLauncherConfig config = null;
+
+            try
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(NUnitLauncherConfig));
+                string configPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "NUnitLauncherConfig.xml");
+                config = (NUnitLauncherConfig)serializer.Deserialize(File.OpenRead(configPath));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Failed to load NUnitLauncherConfig.xml...");
+                Console.ReadKey();
+                return -1;
+            }
 
 			List<string> testAssemblies = new List<string>();
 			foreach(string file in Directory.GetFiles(args[0], "*.Tests.dll", SearchOption.AllDirectories))
@@ -31,7 +49,7 @@ namespace NUnitLauncher
 				// NUnit needs to be on your PATH
 				ProcessStartInfo startInfo = new ProcessStartInfo()
 				{
-					FileName = "nunit",
+					FileName = config.NUnitPath,
 					Arguments = "\"" + testAssemblies[0] + "\" /run"
 				};
 
